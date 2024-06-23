@@ -22,8 +22,8 @@ function turnLeft()
 end
 
 function digLayer(layout, rowLength, numRows)
-  -- Layout 1 (TRUE) -> R,L,R,L...X
-  -- Layout 2 (FALSE) -> L,R,L,R...X
+  -- Forward (TRUE) -> R,L,R,L...X
+  -- Backwards (FALSE) -> L,R,L,R...X
   local nextRow = layout
   local lastRow = numRows
 
@@ -46,7 +46,7 @@ function digLayer(layout, rowLength, numRows)
   turtle.down()
 end
 
-function main(rowLength, numRows)
+function quarry(rowLength, numRows)
   -- Layout 1 -> R,L,R,L...X
   -- Layout 2 -> L,R,L,R...X
   local nextRow = true
@@ -56,6 +56,43 @@ function main(rowLength, numRows)
     digLayer(true, rowLength, numRows)
     digLayer(false, rowLength, numRows)
   end
+end
+
+function loadConfig(configPath)
+  if configPath == "" then
+    configPath = "/disk/quarry.cfg"
+  end
+
+  -- If there is not a cfg file, returns a default config.
+  if not fs.exists(configpath) then
+    return {
+      "yLocation": nil,
+      "rowLength": 2,
+      "numRows": 2,
+    }
+  end
+
+  local key = ""
+  local value = ""
+  local config = {}
+  local fd = open(configPath, "r")
+  local line = fd.readLine()
+  while line do
+    key, value = ssplit(line, "=")
+    config[key] = tonumber(value)
+  end
+  fd.close()
+
+  return config
+end
+
+-- function writeConfig(configPath, )
+
+function main()
+  term.clear()
+  print("Select an option:")
+  print("1. Edit config")
+
 end
 
 main()
