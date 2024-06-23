@@ -90,6 +90,13 @@ function turnLeft()
   turtle.turnLeft()
 end
 
+function return2Base()
+  while config["curYLocation"] < config["startYLocation"] do
+    turtle.up()
+    config["curYLocation"] = config["curYLocation"] + 1
+  end
+end
+
 function digLayer(layout, rowLength, numRows)
   -- Forward (TRUE) -> R,L,R,L...X
   -- Backwards (FALSE) -> L,R,L,R...X
@@ -113,6 +120,7 @@ function digLayer(layout, rowLength, numRows)
   turtle.turnLeft()
   turtle.turnLeft()
   turtle.down()
+  config["curYLocation"] = config["curYLocation"] - 1
 end
 
 function quarry()
@@ -136,11 +144,30 @@ function quarry()
     digLayer(true, rowLength, numRows)
     digLayer(false, rowLength, numRows)
 
-    if turtle.getFuelLevel() < fuelPer2Layers then
-      print("Fuel level is too low to continue ("..turtle.getFuelLevel().."/"..fuelPer2Layers..")!")
+    curFuelLevel = turtle.getFuelLevel()
+    curYLocation = if config["curYLocation"] < 0 then config["curYLocation"] * -1 else config["curYLocation"] end
+
+    -- Return to base if:
+    -- Will not be able to come back after the next two diggings.
+    if curFuelLevel < config["startYLocation"] - curYLocation + 2 then
+      return2Base()
+      pause("Fuel is too low to continue ("..curFuelLevel.."/"..fuelPer2Layers..")!")
+      return
+
+    -- Does not have enough fuel to continue.
+    elseif turtle.getFuelLevel() < fuelPer2Layers then
+      return2Base()
+      print("Fuel level is too low to continue ("..curFuelLevel.."/"..fuelPer2Layers..")!")
       print("Please, refuel the turtle in order to begin the process.")
       pause("Press any key to return to menu")
       return
+
+    -- Has reached its maximum depth or is near to.
+    elseif config["curYLocation"] - 2 < -59 then
+      return2Base()
+      pause("The quarry has reached the maximum depth")
+      return
+
     end
   end
 end
@@ -159,9 +186,10 @@ end
 function setConfig()
   term.clear()
   write("yLocation: ")
-  config["yLocation"] = tonumber(read())
-  write("maxDepth [-59]: ")
-  config["maxDepth"] = tonumber(read())
+  config["startYLocation"] = tonumber(read())
+  config["curYLocation"] = config["startYLocation"]
+  -- write("maxDepth [-59]: ")
+  -- config["maxDepth"] = tonumber(read())
   write("Row length [2]: ")
   config["rowLength"] = tonumber(read())
   write("Number of rows (must be even) [2]: ")
