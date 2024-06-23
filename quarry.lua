@@ -124,16 +124,16 @@ function digLayer(layout, rowLength, numRows)
 end
 
 function quarry()
+  local rowLength = config["rowLength"]
+  local numRows = config["numRows"]
   local fuelPer2Layers = rowLength * numRows * 2
+
   if turtle.getFuelLevel() < fuelPer2Layers then
     print("Fuel level is too low ("..turtle.getFuelLevel().."/"..fuelPer2Layers..")!")
     print("Please, refuel the turtle in order to begin the process.")
     pause("Press any key to return to menu")
     return
   end
-
-  rowLength = config["rowLength"]
-  numRows = config["numRows"]
 
   -- Layout 1 -> R,L,R,L...X
   -- Layout 2 -> L,R,L,R...X
@@ -145,17 +145,12 @@ function quarry()
     digLayer(false, rowLength, numRows)
 
     curFuelLevel = turtle.getFuelLevel()
-    curYLocation = if config["curYLocation"] < 0 then config["curYLocation"] * -1 else config["curYLocation"] end
+    curYLocation = config["curYLocation"] < 0 and config["curYLocation"] * -1 or config["curYLocation"]
 
     -- Return to base if:
-    -- Will not be able to come back after the next two diggings.
-    if curFuelLevel < config["startYLocation"] - curYLocation + 2 then
-      return2Base()
-      pause("Fuel is too low to continue ("..curFuelLevel.."/"..fuelPer2Layers..")!")
-      return
-
-    -- Does not have enough fuel to continue.
-    elseif turtle.getFuelLevel() < fuelPer2Layers then
+    -- TODO Store in config depth reached in order to continue later.
+    -- Will not be able to come back after the next two diggings or does not have enough fuel to continue.
+    if curFuelLevel < config["startYLocation"] - curYLocation + 2 or turtle.getFuelLevel() < fuelPer2Layers then
       return2Base()
       print("Fuel level is too low to continue ("..curFuelLevel.."/"..fuelPer2Layers..")!")
       print("Please, refuel the turtle in order to begin the process.")
@@ -194,6 +189,7 @@ function setConfig()
   config["rowLength"] = tonumber(read())
   write("Number of rows (must be even) [2]: ")
   config["numRows"] = tonumber(read())
+  isConfigSet = true
 end
 
 function printConfig()
@@ -201,8 +197,7 @@ function printConfig()
   for key, value in pairs(config) do
     print(key.." = "..value)
   end
-  print("Press any key to continue...")
-  read()
+  pause("Press any key to continue...")
 end
 
 function main()
