@@ -148,6 +148,7 @@ function quarry()
     curYLocation = config["curYLocation"] < 0 and config["curYLocation"] * -1 or config["curYLocation"]
 
     -- Return to base if:
+    -- TODO Add refuel system.
     -- TODO Store in config depth reached in order to continue later.
     -- Will not be able to come back after the next two diggings or does not have enough fuel to continue.
     if curFuelLevel < config["startYLocation"] - curYLocation + 2 or turtle.getFuelLevel() < fuelPer2Layers then
