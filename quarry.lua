@@ -123,7 +123,45 @@ function digLayer(layout, rowLength, numRows)
   config["curYLocation"] = config["curYLocation"] - 1
 end
 
+--- Emtpy inventory into the behind chest.
+function emtpyInventory()
+  turtle.turnLeft()
+  turtle.turnLeft()
+
+  for cell = 1, 16 do
+    turtle.select(cell)
+    turtle.drop()
+  end
+  turtle.select(1)
+
+  turtle.turnRight()
+  turtle.turnRight()
+end
+
+function refuel()
+  while turtle.getFuelLevel() < turtle.getFuelLimit() do
+    turtle.suckUp()
+    turtle.refuel(64)
+  end
+  -- Flush the left behind gas.
+  for cell = 1, 16 do
+    turtle.select(cell)
+    turtle.dropUp()
+  end
+  turtle.select(1)
+end
+
+function resume()
+  while config["curYLocation"] > config["resumeYLocation"] do
+    turtle.down()
+    config["curYLocation"] = config["curYLocation"] - 1
+  end
+end
+
 function quarry()
+  emtpyInventory()
+  refuel()
+
   local rowLength = config["rowLength"]
   local numRows = config["numRows"]
   local fuelPer2Layers = rowLength * numRows * 2
@@ -141,30 +179,37 @@ function quarry()
   local lastRow = numRows
 
   while true do
-    digLayer(true, rowLength, numRows)
-    digLayer(false, rowLength, numRows)
+    -- TODO If the inventory won't be able to hold anymuch, return to base and empty inventory.
+    -- TODO Manage inventory and time either per percent or per 2 layers.
+    -- Return to base if:
+    -- Will not be able to come back after the next two diggings or does not have enough fuel to continue.
+    -- TODO Add refuel system in the base and return to resumeYLocation.
+    -- TODO Store in config depth reached in order to continue later.
 
     curFuelLevel = turtle.getFuelLevel()
     curYLocation = config["curYLocation"] < 0 and config["curYLocation"] * -1 or config["curYLocation"]
 
-    -- Return to base if:
-    -- TODO Add refuel system.
-    -- TODO Store in config depth reached in order to continue later.
-    -- Will not be able to come back after the next two diggings or does not have enough fuel to continue.
     if curFuelLevel < config["startYLocation"] - curYLocation + 2 or turtle.getFuelLevel() < fuelPer2Layers then
+      config["resumeYLocation"] = curYLocation
       return2Base()
       print("Fuel level is too low to continue ("..curFuelLevel.."/"..fuelPer2Layers..")!")
-      print("Please, refuel the turtle in order to begin the process.")
-      pause("Press any key to return to menu")
-      return
+
+      emtpyInventory()
+      refuel()
+      resume()
 
     -- Has reached its maximum depth or is near to.
-    elseif config["curYLocation"] - 2 < -59 then
+    elseif config["curYLocation"] - 2 < config["maxDepth"] then
       return2Base()
       pause("The quarry has reached the maximum depth")
       return
 
     end
+
+    digLayer(true, rowLength, numRows)
+    digLayer(false, rowLength, numRows)
+
+    ::continue::
   end
 end
 
@@ -186,6 +231,7 @@ function setConfig()
   config["curYLocation"] = config["startYLocation"]
   -- write("maxDepth [-59]: ")
   -- config["maxDepth"] = tonumber(read())
+  config["maxDepth"] = -59
   write("Row length [2]: ")
   config["rowLength"] = tonumber(read())
   write("Number of rows (must be even) [2]: ")
