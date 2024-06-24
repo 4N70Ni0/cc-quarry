@@ -139,8 +139,7 @@ function emtpyInventory()
 end
 
 function refuel()
-  while turtle.getFuelLevel() < turtle.getFuelLimit() do
-    turtle.suckUp()
+  while turtle.getFuelLevel() < turtle.getFuelLimit() and turtle.suckUp() do
     turtle.refuel(64)
   end
   -- Flush the left behind gas.
@@ -161,6 +160,7 @@ end
 function quarry()
   emtpyInventory()
   refuel()
+  print("Fuel status: "..turtle.getFuelLevel().."/"..turtle.getFuelLimit())
 
   local rowLength = config["rowLength"]
   local numRows = config["numRows"]
