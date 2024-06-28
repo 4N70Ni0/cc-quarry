@@ -157,11 +157,16 @@ function quarry()
   end
 end
 
+function printConfig()
+  Q_config.print()
+  pause("Press enter to continue...")
+end
+
 function menu()
   term.clear()
   print("Select an option:")
   print("1. Start quarry")
-  print("2. Set quarry size")
+  print("2. Edit config")
   print("3. Print config")
   print("(Nothing for exit)")
   write("> ")
@@ -172,21 +177,50 @@ end
 -- let the user input the key (tell them if exists or not) and tell them the
 -- value of that key and let them change it and save the config at the end.
 function editConfig()
-  term.clear()
+  local input = nil
+  local input_key = nil
+  local input_value = nil
 
-  -- while true
-  for key, value in ipairs(Q_config.values) do
-    fd.writeLine(key .. "=" .. tostring(value) .. "\n")
+  while true do
+    -- term.clear()
+    Q_config.print()
+    write("> ")
+    input_key = read()
+    if input_key == "" then break end
+
+    if Q_config.exists(input) then
+      write("Set the new value [".. Q_config.get(input) .."]: ")
+      input_value = read()
+      Q_config.set(input_key, tonumber(input_value))
+    else
+      write("That key does not exist, do you want to add it? Y/N: ")
+      if string.lower(read()) == "y" then
+        write("Set a value for the new key: ")
+        input_value = read()
+        Q_config.set(input_key, input_value)
+      end
+    end
   end
+
+  Q_config.save()
 end
 
 function main()
 
+  -- TODO Fix why config is not being loaded from file
+  -- and then fix the edit config function because it's
+  -- not finding the keys in the dict idk.
   Q_config.load()
-  config = Q_config.get()
   Q_config.print()
 
-  while true do
+  print("begin ---")
+  for k,v in ipairs(Q_config.values) do
+    print(k.." = "..v)
+  end
+  print("--- end")
+
+
+  while false do
     local option = menu()
 
     if option == "" then
@@ -198,7 +232,7 @@ function main()
         pause("Quarry cannot start until config is set.")
       end
     elseif option == "2" then
-      setConfig()
+      editConfig()
     elseif option == "3" then
       if isConfigSet then
         printConfig()
@@ -208,7 +242,8 @@ function main()
     end
   end
 
-  Q_config.save()
+  -- Q_config.save()
+
 end
 
 main()
