@@ -1,64 +1,5 @@
+local Q_config = require("Q_config")
 
---[[ CONFIG ]]--
-config = {
-  ["yLocation"] = nil,
-  ["rowLength"] = 3,
-  ["numRows"] = 2
-}
-isConfigSet = false
---[[configPath = "/disk/quarry.cfg"
-
---- Load the configuration from quarry.cfg
--- If there is no file named quarry.cfg, the default config
--- will be both written and used.
--- Otherwise, the config of the file will be used for the program.
-function loadConfig()
-  local fd = open(configPath, "r")
-  local line = fd.readLine()
-  while line do
-    line = line:gsub("%s+", "") -- Remove spaces
-    key, value = ssplit(line, "=")
-    config[key] = tonumber(value)
-  end
-  fd.close()
-end
-
-function writeConfig()
-  local fd = open(configPath, "w")
-  for key, value in ipairs(config) do
-    fd.writeLine(key .. "=" .. tostring(value) .. "\n")
-  end
-  fd.close()
-end
-
-function editConfig()
-  local input = ""
-
-  for key, value in ipairs(config) do
-    ::userinput::
-    write(key.."("..tostring(value).."): ")
-    input = read():gsub("%s+", "")
-
-    if input == "" then
-      print("")
-    end
-
-    if key == "yLocation" then
-      if input != "" then
-        config[key] = tonumber()
-    if input == "" then
-      if key == "rowLenght" or key == "numRows") then
-        print("Input cannot be empty for '"..key.."'")
-        goto userinput
-      end
-    elseif key == "numRows" and tonumber(input) % 2 != 0 then
-      print("'numRows' cannot be odd")
-      goto userinput
-    end
-
-    config[key]
-  end
-end]]--
 
 function pause(msg)
   write(msg)
@@ -196,6 +137,9 @@ function quarry()
 
       emtpyInventory()
       refuel()
+
+      -- TODO Control if has gained any energy and if not finish the quarry process.
+
       resume()
 
     -- Has reached its maximum depth or is near to.
@@ -224,30 +168,24 @@ function menu()
   return read()
 end
 
-function setConfig()
+-- Make an interpreter where each time a key is edited, prints all values again
+-- let the user input the key (tell them if exists or not) and tell them the
+-- value of that key and let them change it and save the config at the end.
+function editConfig()
   term.clear()
-  write("yLocation: ")
-  config["startYLocation"] = tonumber(read())
-  config["curYLocation"] = config["startYLocation"]
-  -- write("maxDepth [-59]: ")
-  -- config["maxDepth"] = tonumber(read())
-  config["maxDepth"] = -59
-  write("Row length [2]: ")
-  config["rowLength"] = tonumber(read())
-  write("Number of rows (must be even) [2]: ")
-  config["numRows"] = tonumber(read())
-  isConfigSet = true
-end
 
-function printConfig()
-  term.clear()
-  for key, value in pairs(config) do
-    print(key.." = "..value)
+  -- while true
+  for key, value in ipairs(Q_config.values) do
+    fd.writeLine(key .. "=" .. tostring(value) .. "\n")
   end
-  pause("Press any key to continue...")
 end
 
 function main()
+
+  Q_config.load()
+  config = Q_config.get()
+  Q_config.print()
+
   while true do
     local option = menu()
 
@@ -269,6 +207,8 @@ function main()
       end
     end
   end
+
+  Q_config.save()
 end
 
 main()
