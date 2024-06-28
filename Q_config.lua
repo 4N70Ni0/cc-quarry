@@ -1,10 +1,11 @@
 Q_config = {}
 
-Q_config.values = {
-  ["yLocation"] = nil,
-  ["rowLength"] = 3,
-  ["numRows"] = 2
-}
+Q_config.values = {}
+-- Q_config.values = {
+--   ["yLocation"] = nil,
+--   ["rowLength"] = 3,
+--   ["numRows"] = 2
+-- }
 Q_config.isset = false
 Q_config.configPath = "/quarry/quarry.cfg"
 
@@ -29,7 +30,7 @@ function Q_config.load()
 
     if string.sub(line, 1, 1) ~= "#" then
       key, value = ssplit(line, "=")
-      Q_config.values[key] = value
+      Q_config.values[key] = tonumber(value)
     end
   end
   fd.close()
@@ -39,6 +40,7 @@ end
 function Q_config.save()
   local fd = fs.open(Q_config.configPath, "w")
   for key, value in ipairs(Q_config.values) do
+    print(key, value)
     fd.writeLine(key .. "=" .. tostring(value) .. "\n")
   end
   fd.close()
@@ -90,19 +92,30 @@ function Q_config.set(key, value)
 end
 
 function Q_config.get(key)
+  if Q_config.values[key] == nil then
+    return false
+  end
   return Q_config.values[key]
 end
 
-function Q_config.print()
-  term.clear()
-  for key, value in pairs(config) do
-    print(key.." = "..value)
-  end
-  pause("Press any key to continue...")
-end
-
-function Q_config.get()
+function Q_config.getConfig()
   return Q_config.values
 end
+
+--- Returns true or false whether a key exists in config.
+function Q_config.exists(key)
+  if not Q_config.get(key) then
+    return false
+  end
+  return true
+end
+
+function Q_config.print()
+  for key, value in ipairs(Q_config.values) do
+    print(key.." = "..value)
+  end
+end
+
+
 
 return Q_config
