@@ -26,22 +26,22 @@ function Q_config.load()
   while true do
     local line = fd.readLine()
     if not line then break end
-    line = line:gsub("%s+", "") -- Remove spaces
 
-    if string.sub(line, 1, 1) ~= "#" then
-      key, value = ssplit(line, "=")
-      Q_config.values[key] = tonumber(value)
+    if line ~= "" then
+      line = line:gsub("%s+", "") -- Remove spaces
+      if string.sub(line, 1, 1) ~= "#" then
+        key, value = ssplit(line, "=")
+        Q_config.values[key] = tonumber(value)
+      end
     end
   end
   fd.close()
-
 end
 
 function Q_config.save()
   local fd = fs.open(Q_config.configPath, "w")
-  for key, value in ipairs(Q_config.values) do
-    print(key, value)
-    fd.writeLine(key .. "=" .. tostring(value) .. "\n")
+  for key, value in pairs(Q_config.values) do
+    fd.writeLine(key .. "=" .. tostring(value))
   end
   fd.close()
 end
@@ -104,14 +104,11 @@ end
 
 --- Returns true or false whether a key exists in config.
 function Q_config.exists(key)
-  if not Q_config.get(key) then
-    return false
-  end
-  return true
+  return Q_config.values[key] ~= nil
 end
 
 function Q_config.print()
-  for key, value in ipairs(Q_config.values) do
+  for key, value in pairs(Q_config.values) do
     print(key.." = "..value)
   end
 end
