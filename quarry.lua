@@ -1,7 +1,9 @@
 local Q_config = require("Q_config")
 
-
 function pause(msg)
+  if msg == nil then
+    msg = ""
+  end
   write(msg)
   read()
 end
@@ -32,6 +34,7 @@ function turnLeft()
 end
 
 function return2Base()
+  print(">> Returning to base")
   while config["curYLocation"] < config["startYLocation"] do
     turtle.up()
     config["curYLocation"] = config["curYLocation"] + 1
@@ -39,6 +42,7 @@ function return2Base()
 end
 
 function digLayer(layout, rowLength, numRows)
+  print(">> Dig layer")
   -- Forward (TRUE) -> R,L,R,L...X
   -- Backwards (FALSE) -> L,R,L,R...X
   local nextRow = layout
@@ -66,6 +70,7 @@ end
 
 --- Emtpy inventory into the behind chest.
 function emtpyInventory()
+  print(">> Empty inventory")
   turtle.turnLeft()
   turtle.turnLeft()
 
@@ -80,6 +85,7 @@ function emtpyInventory()
 end
 
 function refuel()
+  print(">> Refuel")
   while turtle.getFuelLevel() < turtle.getFuelLimit() and turtle.suckUp() do
     turtle.refuel(64)
   end
@@ -92,6 +98,7 @@ function refuel()
 end
 
 function resume()
+  print(">> Resume")
   while config["curYLocation"] > config["resumeYLocation"] do
     turtle.down()
     config["curYLocation"] = config["curYLocation"] - 1
@@ -99,12 +106,14 @@ function resume()
 end
 
 function quarry()
+  print(">> BEGIN QUARRY")
   emtpyInventory()
   refuel()
   print("Fuel status: "..turtle.getFuelLevel().."/"..turtle.getFuelLimit())
 
   local rowLength = config["rowLength"]
   local numRows = config["numRows"]
+  print(rowLength, numRows)
   local fuelPer2Layers = rowLength * numRows * 2
 
   if turtle.getFuelLevel() < fuelPer2Layers then
@@ -131,6 +140,7 @@ function quarry()
     curYLocation = config["curYLocation"] < 0 and config["curYLocation"] * -1 or config["curYLocation"]
 
     if curFuelLevel < config["startYLocation"] - curYLocation + 2 or turtle.getFuelLevel() < fuelPer2Layers then
+      Q_Config.set("resumeYLocation", curYLocation)
       config["resumeYLocation"] = curYLocation
       return2Base()
       print("Fuel level is too low to continue ("..curFuelLevel.."/"..fuelPer2Layers..")!")
@@ -139,7 +149,6 @@ function quarry()
       refuel()
 
       -- TODO Control if has gained any energy and if not finish the quarry process.
-
       resume()
 
     -- Has reached its maximum depth or is near to.
@@ -173,31 +182,32 @@ function menu()
   return read()
 end
 
--- Make an interpreter where each time a key is edited, prints all values again
--- let the user input the key (tell them if exists or not) and tell them the
--- value of that key and let them change it and save the config at the end.
 function editConfig()
   local input = nil
   local input_key = nil
   local input_value = nil
 
   while true do
-    -- term.clear()
+    term.clear()
     Q_config.print()
-    write("> ")
+    write("Enter key> ")
     input_key = read()
     if input_key == "" then break end
 
-    if Q_config.exists(input) then
-      write("Set the new value [".. Q_config.get(input) .."]: ")
+    if Q_config.exists(input_key) then
+      write("Set the new value [".. Q_config.get(input_key) .."]: ")
       input_value = read()
-      Q_config.set(input_key, tonumber(input_value))
+      if input_value ~= "" then
+        Q_config.set(input_key, tonumber(input_value))
+      end
     else
       write("That key does not exist, do you want to add it? Y/N: ")
       if string.lower(read()) == "y" then
         write("Set a value for the new key: ")
         input_value = read()
-        Q_config.set(input_key, input_value)
+        if input_value ~= "" then
+          Q_config.set(input_key, input_value)
+        end
       end
     end
   end
@@ -206,27 +216,17 @@ function editConfig()
 end
 
 function main()
-
-  -- TODO Fix why config is not being loaded from file
-  -- and then fix the edit config function because it's
-  -- not finding the keys in the dict idk.
   Q_config.load()
-  Q_config.print()
 
-  print("begin ---")
-  for k,v in ipairs(Q_config.values) do
-    print(k.." = "..v)
-  end
-  print("--- end")
+  config = Q_config.getConfig()
 
-
-  while false do
+  while true do
     local option = menu()
 
     if option == "" then
       break
     elseif option == "1" then
-      if isConfigSet then
+      if Q_config.isset then
         quarry()
       else
         pause("Quarry cannot start until config is set.")
@@ -234,15 +234,17 @@ function main()
     elseif option == "2" then
       editConfig()
     elseif option == "3" then
-      if isConfigSet then
-        printConfig()
+      if Q_config.isset then
+        term.clear()
+        Q_config.print()
+        pause()
       else
         pause("Config cannot be printed until config is set.")
       end
     end
   end
 
-  -- Q_config.save()
+  Q_config.save()
 
 end
 
