@@ -45,18 +45,17 @@ function return2Base()
   end
 end
 
-function digLayer(layout, rowLength, numRows)
+function digLayer(layout)
   print(">> Dig layer")
-  print(">> FUEL: "..turtle.getFuelLevel().."/"..turtle.getFuelLimit())
   -- Forward (TRUE) -> R,L,R,L...X
   -- Backwards (FALSE) -> L,R,L,R...X
   local nextRow = layout
-  local lastRow = numRows
+  local lastRow = Q_config.get("numRows")
 
   for row = 1, lastRow do
-    digRow(rowLength)
+    digRow(Q_config.get("rowLength"))
 
-    if row <= (lastRow   - 1) then
+    if row <= (lastRow - 1) then
       if nextRow then
         turnRight()
       else
@@ -76,35 +75,6 @@ function digLayer(layout, rowLength, numRows)
   -- config["curYLocation"] = config["curYLocation"] - 1
 end
 
---- Emtpy inventory into the behind chest.
-function emtpyInventory()
-  print(">> Empty inventory")
-  turtle.turnLeft()
-  turtle.turnLeft()
-
-  for cell = 1, 16 do
-    turtle.select(cell)
-    turtle.drop()
-  end
-  turtle.select(1)
-
-  turtle.turnRight()
-  turtle.turnRight()
-end
-
-function refuel()
-  print(">> Refuel")
-  while turtle.getFuelLevel() < turtle.getFuelLimit() and turtle.suckUp() do
-    turtle.refuel(64)
-  end
-  -- Flush the left behind gas.
-  for cell = 1, 16 do
-    turtle.select(cell)
-    turtle.dropUp()
-  end
-  turtle.select(1)
-end
-
 function resume()
   print(">> Resume")
   while Q_config.get("curYLocation") > Q_config.get("resumeYLocation") do
@@ -114,31 +84,12 @@ function resume()
   end
 end
 
--- Returns true if the inventory is full or is about to get full.
-function isInventoryFull()
-  local totalItems = 0
-
-  for cell = 1, 16 do
-    totalItems = turtle.getItemCount(cell) + totalItems
-  end
-
-  if totalItems >= 63 * 16 then
-    return true
-  end
-
-  return false
-end
-
 function quarry()
   print(">> BEGIN QUARRY")
-  emtpyInventory()
-  refuel()
-  print("Fuel status: "..turtle.getFuelLevel().."/"..turtle.getFuelLimit())
+  Q_worker.emtpyInventory()
+  Q_worker.refuel()
 
-  local rowLength = Q_config.get("rowLength")
-  local numRows = Q_config.get("numRows")
-  print(rowLength, numRows)
-  local fuelPer2Layers = rowLength * numRows * 4
+  local fuelPer2Layers = Q_config.get("rowLength") * Q_config.get("numRows") * 2
 
   if turtle.getFuelLevel() < fuelPer2Layers then
     print("Fuel level is too low ("..turtle.getFuelLevel().."/"..fuelPer2Layers..")!")
@@ -147,12 +98,8 @@ function quarry()
     return
   end
 
-  -- Layout 1 -> R,L,R,L...X
-  -- Layout 2 -> L,R,L,R...X
-  local nextRow = true
-  local lastRow = numRows
-
   while true do
+    Q_worker.printStatus()
     -- TODO If the inventory won't be able to hold anymuch, return to base and empty inventory.
     -- TODO Manage inventory and time either per percent or per 2 layers.
     -- Return to base if:
@@ -163,6 +110,7 @@ function quarry()
     curFuelLevel = turtle.getFuelLevel()
     curYLocation = Q_config.get("curYLocation") < 0 and Q_config.get("curYLocation") * -1 or Q_config.get("curYLocation")
 
+    -- TODO Rewrite this code and use Q_worker
     if curFuelLevel < Q_config.get("startYLocation") - curYLocation + 4
         or turtle.getFuelLevel() < fuelPer2Layers
         or isInventoryFull() then
@@ -176,8 +124,8 @@ function quarry()
         print("Fuel level is too low to continue ("..curFuelLevel.."/"..fuelPer2Layers..")!")
       end
 
-      emtpyInventory()
-      refuel()
+      Q_worker.emtpyInventory()
+      Q_worker.refuel()
 
       -- TODO Control if has gained any energy and if not finish the quarry process.
       resume()
@@ -190,8 +138,8 @@ function quarry()
 
     end
 
-    digLayer(true, rowLength, numRows)
-    digLayer(false, rowLength, numRows)
+    digLayer(true)
+    digLayer(false)
 
     ::continue::
   end
