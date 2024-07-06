@@ -10,12 +10,13 @@ end
 
 --[[ TURTLE ]]--
 
-function cleanRow(length)
+function digRow(length)
   for block = 1, length do
     if turtle.detectDown() then
       turtle.digDown()
     end
     if block <= length - 1 then
+      turtle.dig()
       turtle.forward()
     end
   end
@@ -23,33 +24,37 @@ end
 
 function turnRight()
   turtle.turnRight()
+  turtle.dig()
   turtle.forward()
   turtle.turnRight()
 end
 
 function turnLeft()
   turtle.turnLeft()
+  turtle.dig()
   turtle.forward()
   turtle.turnLeft()
 end
 
 function return2Base()
   print(">> Returning to base")
-  while config["curYLocation"] < config["startYLocation"] do
+  while Q_config.get("curYLocation") < Q_config.get("startYLocation") do
     turtle.up()
-    config["curYLocation"] = config["curYLocation"] + 1
+    Q_config.set("curYLocation", Q_config.get("curYLocation") + 1)
+    -- config["curYLocation"] = config["curYLocation"] + 1
   end
 end
 
 function digLayer(layout, rowLength, numRows)
   print(">> Dig layer")
+  print(">> FUEL: "..turtle.getFuelLevel().."/"..turtle.getFuelLimit())
   -- Forward (TRUE) -> R,L,R,L...X
   -- Backwards (FALSE) -> L,R,L,R...X
   local nextRow = layout
   local lastRow = numRows
 
   for row = 1, lastRow do
-    cleanRow(rowLength)
+    digRow(rowLength)
 
     if row <= (lastRow   - 1) then
       if nextRow then
@@ -65,7 +70,10 @@ function digLayer(layout, rowLength, numRows)
   turtle.turnLeft()
   turtle.turnLeft()
   turtle.down()
-  config["curYLocation"] = config["curYLocation"] - 1
+  turtle.digDown()
+  turtle.down()
+  Q_config.set("curYLocation", Q_config.get("curYLocation") - 2)
+  -- config["curYLocation"] = config["curYLocation"] - 1
 end
 
 --- Emtpy inventory into the behind chest.
@@ -99,10 +107,26 @@ end
 
 function resume()
   print(">> Resume")
-  while config["curYLocation"] > config["resumeYLocation"] do
+  while Q_config.get("curYLocation") > Q_config.get("resumeYLocation") do
     turtle.down()
-    config["curYLocation"] = config["curYLocation"] - 1
+    Q_config.set("curYLocation", Q_config.get("curYLocation") - 1)
+    -- config["curYLocation"] = config["curYLocation"] - 1
   end
+end
+
+-- Returns true if the inventory is full or is about to get full.
+function isInventoryFull()
+  local totalItems = 0
+
+  for cell = 1, 16 do
+    totalItems = turtle.getItemCount(cell) + totalItems
+  end
+
+  if totalItems >= 63 * 16 then
+    return true
+  end
+
+  return false
 end
 
 function quarry()
@@ -111,10 +135,10 @@ function quarry()
   refuel()
   print("Fuel status: "..turtle.getFuelLevel().."/"..turtle.getFuelLimit())
 
-  local rowLength = config["rowLength"]
-  local numRows = config["numRows"]
+  local rowLength = Q_config.get("rowLength")
+  local numRows = Q_config.get("numRows")
   print(rowLength, numRows)
-  local fuelPer2Layers = rowLength * numRows * 2
+  local fuelPer2Layers = rowLength * numRows * 4
 
   if turtle.getFuelLevel() < fuelPer2Layers then
     print("Fuel level is too low ("..turtle.getFuelLevel().."/"..fuelPer2Layers..")!")
@@ -137,13 +161,20 @@ function quarry()
     -- TODO Store in config depth reached in order to continue later.
 
     curFuelLevel = turtle.getFuelLevel()
-    curYLocation = config["curYLocation"] < 0 and config["curYLocation"] * -1 or config["curYLocation"]
+    curYLocation = Q_config.get("curYLocation") < 0 and Q_config.get("curYLocation") * -1 or Q_config.get("curYLocation")
 
-    if curFuelLevel < config["startYLocation"] - curYLocation + 2 or turtle.getFuelLevel() < fuelPer2Layers then
+    if curFuelLevel < Q_config.get("startYLocation") - curYLocation + 4
+        or turtle.getFuelLevel() < fuelPer2Layers
+        or isInventoryFull() then
       Q_Config.set("resumeYLocation", curYLocation)
-      config["resumeYLocation"] = curYLocation
+      -- config["resumeYLocation"] = curYLocation
       return2Base()
-      print("Fuel level is too low to continue ("..curFuelLevel.."/"..fuelPer2Layers..")!")
+
+      if isInventoryFull() then
+        print("The inventory is full to continue")
+      else
+        print("Fuel level is too low to continue ("..curFuelLevel.."/"..fuelPer2Layers..")!")
+      end
 
       emtpyInventory()
       refuel()
@@ -152,7 +183,7 @@ function quarry()
       resume()
 
     -- Has reached its maximum depth or is near to.
-    elseif config["curYLocation"] - 2 < config["maxDepth"] then
+    elseif Q_config.get("curYLocation") - 4 < Q_config.get("maxDepth") then
       return2Base()
       pause("The quarry has reached the maximum depth")
       return
