@@ -1,11 +1,6 @@
 Q_config = {}
 
 Q_config.values = {}
--- Q_config.values = {
---   ["yLocation"] = nil,
---   ["rowLength"] = 3,
---   ["numRows"] = 2
--- }
 Q_config.isset = false
 Q_config.configPath = "/quarry/quarry.cfg"
 
@@ -46,49 +41,8 @@ function Q_config.save()
   fd.close()
 end
 
--- function Q_config.edit()
---   local input = ""
-
---   for key, value in ipairs(config) do
---     ::userinput::
---     write(key.."("..tostring(value).."): ")
---     input = read():gsub("%s+", "")
-
---     if input == "" then
---       print("")
---     end
-
---     if key == "yLocation" then
---       if input ~= "" then
---         config[key] = tonumber()
---     if input == "" then
---       if key == "rowLenght" or key == "numRows" then
---         print("Input cannot be empty for '"..key.."'")
---         goto userinput
---       end
---     elseif key == "numRows" and tonumber(input) % 2 ~= 0 then
---       print("'numRows' cannot be odd")
---       goto userinput
---     end
-
---     --config[key]
---   end
--- end
-
 function Q_config.set(key, value)
     Q_config.values[key] = value
-  -- term.clear()
-  -- write("yLocation: ")
-  -- config["startYLocation"] = tonumber(read())
-  -- config["curYLocation"] = config["startYLocation"]
-  -- -- write("maxDepth [-59]: ")
-  -- -- config["maxDepth"] = tonumber(read())
-  -- config["maxDepth"] = -59
-  -- write("Row length [2]: ")
-  -- config["rowLength"] = tonumber(read())
-  -- write("Number of rows (must be even) [2]: ")
-  -- config["numRows"] = tonumber(read())
-  -- isConfigSet = true
 end
 
 function Q_config.get(key)
@@ -112,7 +66,5 @@ function Q_config.print()
     print(key.." = "..value)
   end
 end
-
-
 
 return Q_config
